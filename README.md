@@ -1,56 +1,130 @@
-# Welcome to your Expo app 👋
+# SwarmBuild Ops — Companheiro Mobile (Global Solution)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicativo mobile em **React Native + Expo** para o tema da Global Solution
+**SwarmBuild**: um enxame de rovers autônomos constrói uma cúpula de habitat lunar e o
+canteiro **se auto-recupera** quando um rover falha — o lease da tarefa expira e ela é
+reauctioná-da para um rover saudável, sem intervenção da Terra.
 
-## Get started
+Este app é o **lado Terra** (central de operações): o operador acompanha os rovers,
+**reporta ocorrências** observadas na telemetria e recebe a resposta do coordenador.
 
-1. Install dependencies
+> Projeto-base da solução (simulação + coordenador em Go + dashboard 3D): `gs-fiap-space`.
+> Este repositório é o cliente mobile que conversa com aquele domínio.
 
-   ```bash
-   npm install
-   ```
+## Tema e objetivo
 
-2. Start the app
+- **Tema:** orquestração de enxame para construção autônoma em ambiente hostil (cúpula lunar).
+- **Objetivo do app:** permitir que um operador na Terra **consulte o canteiro**,
+  **informe uma ocorrência** sobre um rover e **acompanhe a resposta de auto-recuperação**
+  do sistema, mantendo um **histórico local** das ocorrências.
 
-   ```bash
-   npx expo start
-   ```
+## Fluxo completo de uso
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+Início ─▶ Rovers (listagem) ─▶ Detalhe do rover ─▶ Reportar ocorrência
+                                                          │
+                                                          ▼
+                              Histórico  ◀── Status/Confirmação (resposta do sistema)
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+1. **Início** — visão geral da missão (progresso da cúpula, rovers ativos, nº de ocorrências).
+2. **Rovers** — listagem do roster com status de cada rover.
+3. **Detalhe do rover** — dados do rover e a tarefa que ele detém; atalho para reportar.
+4. **Reportar ocorrência** — formulário validado (rover, tipo, severidade, descrição) +
+   captura de **localização por GPS**.
+5. **Status/Confirmação** — resposta do sistema: explica a expiração do lease e a
+   reauction (self-heal) da tarefa afetada.
+6. **Histórico** — todas as ocorrências registradas (persistidas localmente); toque para
+   rever os detalhes; opção de limpar.
 
-### Other setup steps
+## Recurso mobile utilizado — GPS / Localização
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+O app usa **`expo-location`** para capturar as coordenadas da estação que registra a
+ocorrência (tela "Reportar ocorrência" → "Capturar localização"). O fluxo trata:
 
-## Learn more
+- pedido de permissão em tempo de execução;
+- **permissão negada** (mensagem clara e envio permitido sem GPS);
+- **falha ao obter posição** (mensagem de erro);
+- exibição das coordenadas capturadas no registro e no histórico.
 
-To learn more about developing your project with Expo, look at the following resources:
+A mensagem de permissão é configurada em `app.json` (plugin `expo-location`).
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Manipulação de dados
 
-## Join the community
+- **Estado do canteiro (rovers e tarefas):** dados simulados em `src/services/worksite.ts`
+  (representam o que viria do coordenador) — exibidos nas telas de listagem e detalhe.
+- **Ocorrências:** persistidas localmente com **AsyncStorage** (`src/services/reports.ts`),
+  sobrevivendo a reinícios do app. CRUD: criar, listar (ordenado por data), buscar por id e limpar.
 
-Join our community of developers creating universal apps.
+## Tratamento de erros e validações
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Formulário: campos obrigatórios (rover, tipo, severidade), descrição com tamanho mínimo,
+  mensagens de erro inline.
+- Permissão de localização negada / falha de GPS tratadas com mensagem.
+- **Registro não encontrado** (rover ou ocorrência inexistente) com tela dedicada.
+- **Falha ao carregar dados** do armazenamento (estado de erro com "tentar novamente").
+- Estados vazios (histórico sem ocorrências).
+
+## Estrutura do projeto
+
+```
+src/
+├── app/                      # Telas (roteamento por arquivos — expo-router)
+│   ├── _layout.tsx           # Stack de navegação + tema
+│   ├── index.tsx             # Início (visão geral da missão)
+│   ├── rovers/index.tsx      # Listagem de rovers
+│   ├── rovers/[id].tsx       # Detalhe do rover
+│   ├── report.tsx            # Formulário de ocorrência (cadastro)
+│   ├── confirmation.tsx      # Status / resposta do sistema
+│   └── history.tsx           # Histórico de ocorrências
+├── components/               # Componentes reutilizáveis de UI
+│   ├── screen.tsx  button.tsx  card.tsx  field.tsx
+│   ├── badge.tsx  option-selector.tsx  rover-card.tsx
+│   ├── stat-tile.tsx  message-state.tsx
+│   └── themed-text.tsx  themed-view.tsx
+├── services/                 # Camada de dados e recursos do dispositivo
+│   ├── worksite.ts           # Rovers e tarefas (dados simulados)
+│   ├── reports.ts            # Persistência de ocorrências (AsyncStorage)
+│   └── location.ts           # GPS (expo-location)
+├── constants/                # theme.ts, domain.ts (labels e cores)
+├── hooks/                    # use-theme, use-color-scheme
+└── types/                    # domain.ts (tipos do domínio)
+```
+
+Separação clara entre **telas** (`app/`), **componentes** (`components/`) e
+**serviços** (`services/`). Tipos do domínio centralizados em `types/`.
+
+## Como executar
+
+Pré-requisitos: Node.js LTS e o app **Expo Go** no celular (ou um emulador iOS/Android).
+
+```bash
+# 1. Instalar dependências
+npm install
+
+# 2. Iniciar o servidor de desenvolvimento
+npx expo start
+
+# 3. Abrir o app
+#    - Celular: escaneie o QR code com o Expo Go
+#    - Emulador: pressione "i" (iOS) ou "a" (Android) no terminal
+```
+
+Verificações:
+
+```bash
+npx tsc --noEmit                  # checagem de tipos
+npx expo export --platform ios    # bundle de produção (valida todas as telas)
+```
+
+## Stack
+
+- React Native `0.85` · Expo SDK `56` · expo-router (navegação por arquivos)
+- TypeScript (strict) · AsyncStorage · expo-location
+
+## Evidências de execução
+
+Veja o **vídeo curto** demonstrando o fluxo completo (início → rovers → detalhe →
+reportar com GPS → confirmação → histórico) e capturas de tela na entrega.
+
+> _Inclua aqui o link do vídeo e/ou as imagens das telas._

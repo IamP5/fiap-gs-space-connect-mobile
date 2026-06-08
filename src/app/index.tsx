@@ -1,98 +1,88 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
+import { Button } from '@/components/button';
+import { Card } from '@/components/card';
+import { Screen } from '@/components/screen';
+import { StatTile } from '@/components/stat-tile';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+import { Spacing } from '@/constants/theme';
+import { listReports } from '@/services/reports';
+import { getDomeProgress, getRovers } from '@/services/worksite';
 
 export default function HomeScreen() {
+  const router = useRouter();
+  const [reportCount, setReportCount] = useState(0);
+
+  const rovers = getRovers();
+  const activeRovers = rovers.filter((rover) => rover.status === 'ACTIVE').length;
+  const domeProgress = getDomeProgress();
+
+  // Refresh the occurrence count every time the screen regains focus so the
+  // overview reflects reports filed during the session.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      listReports()
+        .then((reports) => active && setReportCount(reports.length))
+        .catch(() => active && setReportCount(0));
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
+    <Screen>
+      <View style={styles.hero}>
+        <ThemedText type="subtitle">Central de Operações</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          Companheiro Terra do enxame que constrói a cúpula lunar. Acompanhe os rovers e
+          reporte ocorrências — o canteiro se reorganiza sozinho quando um rover falha.
         </ThemedText>
+      </View>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+      <View style={styles.stats}>
+        <StatTile value={`${domeProgress}%`} label="Cúpula concluída" />
+        <StatTile value={`${activeRovers}`} label="Rovers ativos" />
+        <StatTile value={`${reportCount}`} label="Ocorrências" />
+      </View>
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+      <Card>
+        <ThemedText type="smallBold">Fluxo de operação</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          1. Consulte os rovers · 2. Reporte uma ocorrência · 3. Acompanhe a resposta do
+          coordenador · 4. Revise o histórico.
+        </ThemedText>
+      </Card>
+
+      <View style={styles.actions}>
+        <Button label="Ver rovers" onPress={() => router.push('/rovers')} />
+        <Button
+          label="Reportar ocorrência"
+          variant="secondary"
+          onPress={() => router.push('/report')}
+        />
+        <Button
+          label="Histórico de ocorrências"
+          variant="secondary"
+          onPress={() => router.push('/history')}
+        />
+      </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
+  hero: {
+    gap: Spacing.two,
+  },
+  stats: {
     flexDirection: 'row',
+    gap: Spacing.two,
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  actions: {
+    gap: Spacing.two,
   },
 });
