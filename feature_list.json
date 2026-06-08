@@ -1,0 +1,52 @@
+{
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "Project setup & verification",
+      "description": "App installs and verifies from a clean checkout: npm install, tsc --noEmit, expo lint, expo export --platform ios all succeed.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "tsc --noEmit clean; expo lint clean; expo export --platform ios exit 0 (1107 modules). See README + init.sh."
+    },
+    {
+      "id": "feat-002",
+      "name": "Worksite data + screens (consult)",
+      "description": "Home overview, rover roster list, and rover detail. Reads simulated worksite data (rovers + tasks) from src/services/worksite.ts.",
+      "dependencies": ["feat-001"],
+      "status": "done",
+      "evidence": "src/app/index.tsx, rovers/index.tsx, rovers/[id].tsx; data in src/services/worksite.ts. Bundled in expo export."
+    },
+    {
+      "id": "feat-003",
+      "name": "Report occurrence flow (cadastro -> status)",
+      "description": "Validated incident form (rover, type, severity, description) -> persists to AsyncStorage -> confirmation/status screen showing the self-heal system response.",
+      "dependencies": ["feat-002"],
+      "status": "done",
+      "evidence": "src/app/report.tsx, confirmation.tsx; persistence in src/services/reports.ts. Validation + error states implemented."
+    },
+    {
+      "id": "feat-004",
+      "name": "GPS native resource",
+      "description": "Capture ground-station coordinates via expo-location on the report form, handling permission-denied and error states.",
+      "dependencies": ["feat-002"],
+      "status": "done",
+      "evidence": "src/services/location.ts + report.tsx; permission string set in app.json (expo-location plugin)."
+    },
+    {
+      "id": "feat-005",
+      "name": "History (AsyncStorage)",
+      "description": "List all stored occurrences (newest first), open details, clear history. Empty/error/loading states.",
+      "dependencies": ["feat-003"],
+      "status": "done",
+      "evidence": "src/app/history.tsx reading src/services/reports.ts."
+    },
+    {
+      "id": "feat-006",
+      "name": "Delivery evidence (video + screenshots + repo link)",
+      "description": "Record a short video of the full flow (home -> rovers -> detail -> report with GPS -> confirmation -> history), capture screenshots, and fill the placeholders in README.md (video + git repo link). Required by the rubric; missing evidence loses points.",
+      "dependencies": ["feat-005"],
+      "status": "not-started",
+      "evidence": ""
+    }
+  ]
+}
