@@ -14,9 +14,8 @@ import {
   SeverityLabel,
 } from '@/constants/domain';
 import { Spacing } from '@/constants/theme';
-import { formatGeoPoint } from '@/services/location';
 import { getReportById } from '@/services/reports';
-import { getRoverById, getTaskForRover } from '@/services/worksite';
+import { getSelfHealResponse } from '@/services/worksite';
 import type { IncidentReport } from '@/types/domain';
 
 type LoadState =
@@ -24,16 +23,6 @@ type LoadState =
   | { phase: 'error' }
   | { phase: 'missing' }
   | { phase: 'ready'; report: IncidentReport };
-
-/** Builds the system's self-heal response for the reported rover. */
-function systemResponse(report: IncidentReport): string {
-  const rover = getRoverById(report.roverId);
-  const task = rover ? getTaskForRover(rover) : undefined;
-  if (task && task.status === 'LEASED') {
-    return `O coordenador registrou a ocorrência. O lease da tarefa "${task.label}" irá expirar por silêncio de heartbeat e ela será reauctioná-da para um rover saudável. O canteiro se auto-recupera — sem intervenção da Terra.`;
-  }
-  return 'O coordenador registrou a ocorrência. Como o rover não detém uma tarefa ativa, nenhuma reauction é necessária; a equipe de operações foi notificada.';
-}
 
 function formatDate(iso: string): string {
   const date = new Date(iso);
@@ -102,7 +91,7 @@ export default function ConfirmationScreen() {
           ✓ Ocorrência registrada
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          {systemResponse(report)}
+          {getSelfHealResponse(report.roverId).detail}
         </ThemedText>
       </Card>
 
@@ -116,9 +105,6 @@ export default function ConfirmationScreen() {
         <ThemedText type="small">{report.description}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           Registrada em {formatDate(report.createdAt)}
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          Localização: {report.location ? formatGeoPoint(report.location) : 'não informada'}
         </ThemedText>
       </Card>
 

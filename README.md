@@ -27,27 +27,38 @@ Início ─▶ Rovers (listagem) ─▶ Detalhe do rover ─▶ Reportar ocorrê
                               Histórico  ◀── Status/Confirmação (resposta do sistema)
 ```
 
-1. **Início** — visão geral da missão (progresso da cúpula, rovers ativos, nº de ocorrências).
+1. **Início** — visão geral da missão (progresso da cúpula, rovers ativos, nº de ocorrências)
+   e o **Monitor do enxame** (ativa alertas e simula um evento de auto-recuperação).
 2. **Rovers** — listagem do roster com status de cada rover.
 3. **Detalhe do rover** — dados do rover e a tarefa que ele detém; atalho para reportar.
-4. **Reportar ocorrência** — formulário validado (rover, tipo, severidade, descrição) +
-   captura de **localização por GPS**.
+4. **Reportar ocorrência** — formulário validado (rover, tipo, severidade, descrição).
 5. **Status/Confirmação** — resposta do sistema: explica a expiração do lease e a
    reauction (self-heal) da tarefa afetada.
 6. **Histórico** — todas as ocorrências registradas (persistidas localmente); toque para
    rever os detalhes; opção de limpar.
 
-## Recurso mobile utilizado — GPS / Localização
+## Recurso mobile utilizado — Notificações
 
-O app usa **`expo-location`** para capturar as coordenadas da estação que registra a
-ocorrência (tela "Reportar ocorrência" → "Capturar localização"). O fluxo trata:
+O app usa **`expo-notifications`** (notificações locais) porque é exatamente o que um
+**companheiro de operações** faz: avisar o operador no celular quando o enxame reage. Dois
+pontos de uso, ambos alinhados ao tema:
 
-- pedido de permissão em tempo de execução;
-- **permissão negada** (mensagem clara e envio permitido sem GPS);
-- **falha ao obter posição** (mensagem de erro);
-- exibição das coordenadas capturadas no registro e no histórico.
+- **Resposta do coordenador:** ao registrar uma ocorrência, o coordenador devolve a ação de
+  auto-recuperação como uma **notificação** ("lease expirado → tarefa reauctioná-da para um
+  rover saudável"). Tocar no alerta faz **deep-link** para a tela de status da ocorrência.
+- **Monitor do enxame (Início):** o botão "Simular evento do enxame" dispara um alerta de
+  falha de rover + reauction — ótimo para demonstrar o self-heal no vídeo.
 
-A mensagem de permissão é configurada em `app.json` (plugin `expo-location`).
+O fluxo trata:
+
+- pedido de permissão em tempo de execução (botão "Ativar alertas");
+- **permissão negada** (mensagem clara; o app segue funcional, mostrando a resposta na tela);
+- **deep-link** ao tocar na notificação, inclusive com o app fechado (cold start).
+
+São **apenas notificações locais** (sem servidor), então o fluxo é demonstrável offline. A
+configuração do plugin fica em `app.json` (plugin `expo-notifications`).
+
+> Notificações locais funcionam no **Expo Go (iOS)** e em qualquer **development build**.
 
 ## Manipulação de dados
 
@@ -60,7 +71,7 @@ A mensagem de permissão é configurada em `app.json` (plugin `expo-location`).
 
 - Formulário: campos obrigatórios (rover, tipo, severidade), descrição com tamanho mínimo,
   mensagens de erro inline.
-- Permissão de localização negada / falha de GPS tratadas com mensagem.
+- Permissão de notificações negada tratada com mensagem clara (app segue funcional).
 - **Registro não encontrado** (rover ou ocorrência inexistente) com tela dedicada.
 - **Falha ao carregar dados** do armazenamento (estado de erro com "tentar novamente").
 - Estados vazios (histórico sem ocorrências).
@@ -85,7 +96,7 @@ src/
 ├── services/                 # Camada de dados e recursos do dispositivo
 │   ├── worksite.ts           # Rovers e tarefas (dados simulados)
 │   ├── reports.ts            # Persistência de ocorrências (AsyncStorage)
-│   └── location.ts           # GPS (expo-location)
+│   └── notifications.ts      # Alertas locais (expo-notifications)
 ├── constants/                # theme.ts, domain.ts (labels e cores)
 ├── hooks/                    # use-theme, use-color-scheme
 └── types/                    # domain.ts (tipos do domínio)
@@ -120,11 +131,11 @@ npx expo export --platform ios    # bundle de produção (valida todas as telas)
 ## Stack
 
 - React Native `0.85` · Expo SDK `56` · expo-router (navegação por arquivos)
-- TypeScript (strict) · AsyncStorage · expo-location
+- TypeScript (strict) · AsyncStorage · expo-notifications
 
 ## Evidências de execução
 
 Veja o **vídeo curto** demonstrando o fluxo completo (início → rovers → detalhe →
-reportar com GPS → confirmação → histórico) e capturas de tela na entrega.
+reportar → alerta do coordenador → confirmação → histórico) e capturas de tela na entrega.
 
 > _Inclua aqui o link do vídeo e/ou as imagens das telas._

@@ -1,9 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
-import { Card } from '@/components/card';
 import { Field } from '@/components/field';
 import { OptionSelector } from '@/components/option-selector';
 import { Screen } from '@/components/screen';
@@ -14,11 +12,10 @@ import {
   SEVERITIES,
   SeverityLabel,
 } from '@/constants/domain';
-import { Spacing } from '@/constants/theme';
+import { scheduleAlert } from '@/services/notifications';
 import { saveReport } from '@/services/reports';
-import { formatGeoPoint, getCurrentLocation } from '@/services/location';
-import { getRoverById, getRovers } from '@/services/worksite';
-import type { GeoPoint, IncidentType, Severity } from '@/types/domain';
+import { getRoverById, getRovers, getSelfHealResponse } from '@/services/worksite';
+import type { IncidentType, Severity } from '@/types/domain';
 
 const DESCRIPTION_MIN = 10;
 
@@ -42,28 +39,8 @@ export default function ReportScreen() {
   const [severity, setSeverity] = useState<Severity | null>(null);
   const [description, setDescription] = useState('');
 
-  const [location, setLocation] = useState<GeoPoint | null>(null);
-  const [locationMessage, setLocationMessage] = useState<string | null>(null);
-  const [locationLoading, setLocationLoading] = useState(false);
-
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
-
-  async function captureLocation() {
-    setLocationLoading(true);
-    setLocationMessage(null);
-    const result = await getCurrentLocation();
-    if (result.status === 'ok') {
-      setLocation(result.point);
-    } else if (result.status === 'denied') {
-      setLocation(null);
-      setLocationMessage('Permissão de localização negada. A ocorrência pode ser enviada sem GPS.');
-    } else {
-      setLocation(null);
-      setLocationMessage(`Não foi possível obter a localização: ${result.message}`);
-    }
-    setLocationLoading(false);
-  }
 
   function validate(): boolean {
     const next: FormErrors = {};
@@ -94,7 +71,15 @@ export default function ReportScreen() {
         type: type!,
         severity: severity!,
         description: description.trim(),
-        location,
+      });
+      // Push the coordinator's self-heal response back to the operator's phone.
+      // Fire-and-forget: if notifications are denied, the confirmation screen
+      // still shows the same response on-screen.
+      const response = getSelfHealResponse(rover.id);
+      void scheduleAlert({
+        title: '🛰️ Resposta do coordenador',
+        body: response.headline,
+        route: `/confirmation?reportId=${report.id}`,
       });
       router.replace(`/confirmation?reportId=${report.id}`);
     } catch {
@@ -146,42 +131,12 @@ export default function ReportScreen() {
         error={errors.description}
       />
 
-      <Card>
-        <ThemedText type="smallBold">Localização da estação (GPS)</ThemedText>
-        {location ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            Capturada: {formatGeoPoint(location)}
-          </ThemedText>
-        ) : (
-          <ThemedText type="small" themeColor="textSecondary">
-            Opcional — anexa as coordenadas da estação que registrou a ocorrência.
-          </ThemedText>
-        )}
-        {locationMessage ? (
-          <ThemedText type="small" style={styles.locationWarning}>
-            {locationMessage}
-          </ThemedText>
-        ) : null}
-        <View style={styles.locationButton}>
-          <Button
-            label={location ? 'Atualizar localização' : 'Capturar localização'}
-            variant="secondary"
-            loading={locationLoading}
-            onPress={captureLocation}
-          />
-        </View>
-      </Card>
+      <ThemedText type="small" themeColor="textSecondary">
+        Ao registrar, o coordenador responde com a ação de auto-recuperação do canteiro —
+        você recebe um alerta no dispositivo.
+      </ThemedText>
 
       <Button label="Registrar ocorrência" loading={submitting} onPress={handleSubmit} />
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  locationWarning: {
-    color: '#c98a16',
-  },
-  locationButton: {
-    marginTop: Spacing.one,
-  },
-});

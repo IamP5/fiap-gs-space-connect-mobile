@@ -7,8 +7,16 @@
 ## Current state
 
 The app is **feature-complete and verified**. All 6 screens, navigation, AsyncStorage
-persistence, GPS native resource, and validation/error handling are implemented (feat-001
-through feat-005 `done`). Only the **delivery evidence** (feat-006) remains.
+persistence, the **notifications native resource**, and validation/error handling are
+implemented (feat-001 through feat-005 `done`). Only the **delivery evidence** (feat-006)
+remains.
+
+**2026-06-08 — native resource changed (GPS → Notifications).** The old GPS resource was
+forced (attaching the operator's Earth coordinates to a lunar rover made no sense). Replaced
+with **expo-notifications**: the coordinator's self-heal response is pushed to the phone when
+a report is filed (deep-links to confirmation), and the home "Monitor do enxame" simulates a
+rover-failure/re-auction event. expo-location removed. Re-verified: tsc + lint clean, expo
+export --platform ios exit 0.
 
 ## Active feature
 
@@ -24,8 +32,9 @@ This is a human task: record the demo and fill the README placeholders.
 ## Next action
 
 1. `npx expo start`, open in Expo Go / simulator.
-2. Walk the full flow: Início → Rovers → Detalhe → Reportar (capturar GPS) →
-   Status/Confirmação → Histórico. Record a short video + a few screenshots.
+2. Walk the full flow: Início (ativar alertas + "Simular evento do enxame") → Rovers →
+   Detalhe → Reportar → toque no alerta do coordenador → Status/Confirmação → Histórico.
+   Record a short video + a few screenshots (capture a notification banner for evidence).
 3. Edit `README.md` "Evidências de execução" section: paste the video link and the git
    repo link.
 4. Set feat-006 `status: done` with the evidence link.

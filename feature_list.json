@@ -26,11 +26,11 @@
     },
     {
       "id": "feat-004",
-      "name": "GPS native resource",
-      "description": "Capture ground-station coordinates via expo-location on the report form, handling permission-denied and error states.",
+      "name": "Notifications native resource",
+      "description": "Coordinator self-heal alerts via expo-notifications (local). Filing a report pushes the system response (deep-links to confirmation); the home 'Monitor do enxame' simulates a swarm failure/re-auction event. Handles permission request + denied state. Replaces the earlier forced GPS resource with one that fits the ops-companion theme.",
       "dependencies": ["feat-002"],
       "status": "done",
-      "evidence": "src/services/location.ts + report.tsx; permission string set in app.json (expo-location plugin)."
+      "evidence": "src/services/notifications.ts; wired in report.tsx (self-heal push), index.tsx (monitor card + simulate), _layout.tsx (tap deep-link incl. cold start). expo-notifications plugin in app.json. tsc + lint clean; expo export --platform ios exit 0."
     },
     {
       "id": "feat-005",

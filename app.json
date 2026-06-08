@@ -36,9 +36,9 @@
         }
       ],
       [
-        "expo-location",
+        "expo-notifications",
         {
-          "locationWhenInUsePermission": "O SwarmBuild Ops usa sua localização para anexar as coordenadas da estação à ocorrência registrada."
+          "color": "#208AEF"
         }
       ]
     ],

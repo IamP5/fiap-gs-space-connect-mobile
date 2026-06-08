@@ -49,16 +49,10 @@ export type IncidentType =
   | 'SENSOR_OFFLINE'
   | 'OBSTACULO';
 
-/** GPS coordinates of the ground station that filed the report. */
-export interface GeoPoint {
-  latitude: number;
-  longitude: number;
-}
-
 /**
  * An occurrence reported by an operator. Persisted locally (AsyncStorage).
  * Reporting an occurrence on a rover that holds a lease triggers the self-heal
- * narrative shown on the confirmation screen.
+ * narrative shown on the confirmation screen and pushed as a notification.
  */
 export interface IncidentReport {
   id: string;
@@ -67,8 +61,6 @@ export interface IncidentReport {
   type: IncidentType;
   severity: Severity;
   description: string;
-  /** Ground-station location captured via GPS, or null if unavailable. */
-  location: GeoPoint | null;
   /** ISO timestamp of when the report was filed. */
   createdAt: string;
 }

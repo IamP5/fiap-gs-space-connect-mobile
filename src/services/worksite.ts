@@ -95,3 +95,59 @@ export function getDomeProgress(): number {
   const done = TASKS.filter((task) => task.status === 'DONE').length;
   return Math.round((done / TASKS.length) * 100);
 }
+
+/** The coordinator's self-heal response when an occurrence is filed on a rover. */
+export type SelfHealResponse = {
+  /** One-liner for notifications and banners. */
+  headline: string;
+  /** Full explanation for the confirmation screen. */
+  detail: string;
+};
+
+/**
+ * Builds the coordinator's response to an occurrence reported on `roverId`. If
+ * the rover holds a task lease, the lease expires and the task is re-auctioned
+ * to a healthy rover — the worksite self-heals without intervention from Earth.
+ */
+export function getSelfHealResponse(roverId: string): SelfHealResponse {
+  const rover = getRoverById(roverId);
+  const task = rover ? getTaskForRover(rover) : undefined;
+  if (rover && task && task.status === 'LEASED') {
+    const healthy = pickHealthyRover(rover.id);
+    return {
+      headline: `Lease de "${task.label}" expirado — reauctioná-da para ${healthy?.name ?? 'um rover saudável'}.`,
+      detail: `O coordenador registrou a ocorrência. O lease da tarefa "${task.label}" irá expirar por silêncio de heartbeat e ela será reauctioná-da para ${healthy?.name ?? 'um rover saudável'}. O canteiro se auto-recupera — sem intervenção da Terra.`,
+    };
+  }
+  return {
+    headline: 'Ocorrência registrada — nenhuma reauction necessária.',
+    detail:
+      'O coordenador registrou a ocorrência. Como o rover não detém uma tarefa ativa, nenhuma reauction é necessária; a equipe de operações foi notificada.',
+  };
+}
+
+/**
+ * A simulated swarm event for the operations monitor demo: a rover loses its
+ * heartbeat and the task it held is re-auctioned to a healthy rover.
+ */
+export function getSimulatedSwarmEvent(): { title: string; body: string } {
+  const leased = TASKS.filter((task) => task.status === 'LEASED' && task.assignedRoverId);
+  const task = leased[Math.floor(Math.random() * leased.length)] ?? leased[0];
+  const failing = task ? getRoverById(task.assignedRoverId!) : undefined;
+  const healthy = pickHealthyRover(failing?.id);
+  if (!task || !failing) {
+    return {
+      title: '✅ Canteiro estável',
+      body: 'Nenhuma falha ativa no enxame. Todos os rovers reportando heartbeat.',
+    };
+  }
+  return {
+    title: '⚠️ Falha de rover detectada',
+    body: `${failing.name} perdeu heartbeat — "${task.label}" reauctioná-da para ${healthy?.name ?? 'um rover saudável'}. Canteiro auto-recuperado.`,
+  };
+}
+
+/** Picks a healthy rover (not OFFLINE, not the failing one) to take over a task. */
+function pickHealthyRover(excludeId?: string): Rover | undefined {
+  return ROVERS.find((rover) => rover.status !== 'OFFLINE' && rover.id !== excludeId);
+}
