@@ -16,12 +16,12 @@ export function MessageState({ title, description, loading = false }: MessageSta
   const theme = useTheme();
   return (
     <View style={styles.container}>
-      {loading ? <ActivityIndicator color={theme.tint} /> : null}
+      {loading ? <ActivityIndicator color={theme.accent} /> : null}
       <ThemedText type="smallBold" style={styles.title}>
         {title}
       </ThemedText>
       {description ? (
-        <ThemedText type="small" themeColor="textSecondary" style={styles.description}>
+        <ThemedText type="small" themeColor="inkMute" style={styles.description}>
           {description}
         </ThemedText>
       ) : null}

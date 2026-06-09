@@ -1,10 +1,14 @@
-/** Single-select chip group used for picking enum values (type, severity). */
+/** chip-select (DESIGN.md) — idle ghost pill, selected = cyan fill. */
 
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
+import { usePressScale } from '@/hooks/use-press-scale';
 import { useTheme } from '@/hooks/use-theme';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type OptionSelectorProps<T extends string> = {
   label: string;
@@ -15,6 +19,40 @@ type OptionSelectorProps<T extends string> = {
   getLabel: (option: T) => string;
   error?: string;
 };
+
+type ChipProps = {
+  text: string;
+  selected: boolean;
+  onPress: () => void;
+};
+
+function Chip({ text, selected, onPress }: ChipProps) {
+  const theme = useTheme();
+  const { animatedStyle, onPressIn, onPressOut } = usePressScale(0.95);
+
+  return (
+    <AnimatedPressable
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      // Compact pill, but extend the touch area to the 44px floor (DESIGN.md).
+      hitSlop={{ top: 8, bottom: 8 }}
+      style={[
+        styles.chip,
+        {
+          backgroundColor: selected ? theme.accent : 'transparent',
+          borderColor: selected ? theme.accent : theme.panelEdge,
+        },
+        animatedStyle,
+      ]}>
+      <ThemedText type="eyebrow" style={{ color: selected ? theme.onAccent : theme.inkMute }}>
+        {text}
+      </ThemedText>
+    </AnimatedPressable>
+  );
+}
 
 export function OptionSelector<T extends string>({
   label,
@@ -28,34 +66,21 @@ export function OptionSelector<T extends string>({
 
   return (
     <View style={styles.container}>
-      <ThemedText type="smallBold">{label}</ThemedText>
+      <ThemedText type="eyebrow" themeColor="inkMute">
+        {label}
+      </ThemedText>
       <View style={styles.chips}>
-        {options.map((option) => {
-          const selected = option === value;
-          return (
-            <Pressable
-              key={option}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              onPress={() => onChange(option)}
-              style={[
-                styles.chip,
-                {
-                  backgroundColor: selected ? theme.tint : theme.backgroundElement,
-                  borderColor: selected ? theme.tint : theme.border,
-                },
-              ]}>
-              <ThemedText
-                type="small"
-                style={{ color: selected ? '#ffffff' : theme.text }}>
-                {getLabel(option)}
-              </ThemedText>
-            </Pressable>
-          );
-        })}
+        {options.map((option) => (
+          <Chip
+            key={option}
+            text={getLabel(option)}
+            selected={option === value}
+            onPress={() => onChange(option)}
+          />
+        ))}
       </View>
       {error ? (
-        <ThemedText type="small" style={styles.error}>
+        <ThemedText selectable type="small" style={{ color: theme.signalDown }}>
           {error}
         </ThemedText>
       ) : null}
@@ -73,12 +98,9 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   chip: {
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.four,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  error: {
-    color: '#d1453b',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
   },
 });

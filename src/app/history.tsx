@@ -1,7 +1,8 @@
+import { FlashList } from '@shopify/flash-list';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, FlatList, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Alert, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Badge } from '@/components/badge';
 import { Button } from '@/components/button';
@@ -9,8 +10,10 @@ import { Card } from '@/components/card';
 import { MessageState } from '@/components/message-state';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { IncidentTypeLabel, SeverityColor, SeverityLabel } from '@/constants/domain';
+import { IncidentTypeLabel, SeverityLabel } from '@/constants/domain';
+import { Beats, Durations } from '@/constants/motion';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useDomainColors } from '@/hooks/use-domain-colors';
 import { clearReports, listReports } from '@/services/reports';
 import type { IncidentReport } from '@/types/domain';
 
@@ -19,13 +22,24 @@ type LoadState =
   | { phase: 'error' }
   | { phase: 'ready'; reports: IncidentReport[] };
 
+// Hoisted: building an Intl formatter parses locale data, so create it once at
+// module scope rather than per list row (js-hoist-intl).
+const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
+  dateStyle: 'short',
+  timeStyle: 'short',
+});
+
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString('pt-BR');
+  return dateTimeFormatter.format(new Date(iso));
+}
+
+function Separator() {
+  return <View style={styles.separator} />;
 }
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const { severity } = useDomainColors();
   const [state, setState] = useState<LoadState>({ phase: 'loading' });
 
   const load = useCallback(() => {
@@ -89,34 +103,37 @@ export default function HistoryScreen() {
 
   return (
     <ThemedView style={styles.flex}>
-      <FlatList
+      <FlashList
         data={state.reports}
         keyExtractor={(report) => report.id}
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: Spacing.three, paddingBottom: insets.bottom + Spacing.four },
-        ]}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.content}
+        ItemSeparatorComponent={Separator}
         ListHeaderComponent={
-          <View style={styles.header}>
-            <ThemedText type="small" themeColor="textSecondary">
+          <View style={[styles.item, styles.header]}>
+            <ThemedText type="eyebrow" themeColor="inkMute">
               {state.reports.length} ocorrência(s) · toque para ver os detalhes.
             </ThemedText>
             <Button label="Limpar histórico" variant="secondary" onPress={confirmClear} />
           </View>
         }
-        renderItem={({ item }) => (
-          <Card onPress={() => router.push(`/confirmation?reportId=${item.id}`)}>
-            <View style={styles.cardHeader}>
-              <ThemedText type="smallBold" style={styles.roverName}>
-                {item.roverName}
+        renderItem={({ item, index }) => (
+          <Animated.View
+            style={styles.item}
+            entering={FadeInDown.duration(Durations.base).delay(index * Beats.listStagger.stagger)}>
+            <Card href={`/confirmation?reportId=${item.id}`}>
+              <View style={styles.cardHeader}>
+                <ThemedText type="smallBold" style={styles.roverName}>
+                  {item.roverName}
+                </ThemedText>
+                <Badge label={SeverityLabel[item.severity]} color={severity[item.severity]} />
+              </View>
+              <ThemedText type="small">{IncidentTypeLabel[item.type]}</ThemedText>
+              <ThemedText type="data" themeColor="inkMute">
+                {formatDate(item.createdAt)}
               </ThemedText>
-              <Badge label={SeverityLabel[item.severity]} color={SeverityColor[item.severity]} />
-            </View>
-            <ThemedText type="small">{IncidentTypeLabel[item.type]}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {formatDate(item.createdAt)}
-            </ThemedText>
-          </Card>
+            </Card>
+          </Animated.View>
         )}
       />
     </ThemedView>
@@ -133,14 +150,19 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.four,
-    gap: Spacing.two,
+    paddingTop: Spacing.three,
+    paddingBottom: Spacing.four,
+  },
+  // FlashList contentContainerStyle can't center/constrain width, so each cell
+  // carries the max-width centering instead.
+  item: {
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
   header: {
     gap: Spacing.two,
-    marginBottom: Spacing.one,
+    marginBottom: Spacing.two,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -150,5 +172,11 @@ const styles = StyleSheet.create({
   },
   roverName: {
     fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  separator: {
+    height: Spacing.two,
   },
 });

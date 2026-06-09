@@ -1,29 +1,38 @@
 /** Summary row for a rover in the roster list. */
 
+import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { Badge } from '@/components/badge';
 import { Card } from '@/components/card';
 import { ThemedText } from '@/components/themed-text';
-import { RoverStatusColor, RoverStatusLabel } from '@/constants/domain';
+import { RoverStatusLabel } from '@/constants/domain';
 import { Spacing } from '@/constants/theme';
+import { useDomainColors } from '@/hooks/use-domain-colors';
 import type { Rover } from '@/types/domain';
 
 type RoverCardProps = {
   rover: Rover;
-  onPress: () => void;
 };
 
-export function RoverCard({ rover, onPress }: RoverCardProps) {
+export function RoverCard({ rover }: RoverCardProps) {
+  const { roverStatus } = useDomainColors();
+  const router = useRouter();
   return (
-    <Card onPress={onPress}>
+    <Card
+      href={`/rovers/${rover.id}`}
+      menuActions={[
+        {
+          title: 'Reportar ocorrência',
+          icon: 'exclamationmark.bubble',
+          onPress: () => router.push(`/report?roverId=${rover.id}`),
+        },
+      ]}>
       <View style={styles.header}>
-        <ThemedText type="smallBold" style={styles.name}>
-          {rover.name}
-        </ThemedText>
-        <Badge label={RoverStatusLabel[rover.status]} color={RoverStatusColor[rover.status]} />
+        <ThemedText style={styles.name}>{rover.name}</ThemedText>
+        <Badge label={RoverStatusLabel[rover.status]} color={roverStatus[rover.status]} />
       </View>
-      <ThemedText type="small" themeColor="textSecondary">
+      <ThemedText type="data" themeColor="inkMute">
         {rover.capability} · bateria {rover.battery}%
       </ThemedText>
     </Card>
@@ -39,5 +48,8 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
 });

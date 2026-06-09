@@ -1,6 +1,15 @@
 /** Human-readable labels and visual mappings for domain enums. */
 
+import { Colors } from '@/constants/theme';
+import type { Scheme } from '@/contexts/theme-context';
 import type { IncidentType, RoverStatus, Severity, TaskStatus } from '@/types/domain';
+
+type SignalSet = {
+  signalOk: string;
+  signalWarn: string;
+  signalDown: string;
+  signalIdle: string;
+};
 
 export const RoverStatusLabel: Record<RoverStatus, string> = {
   ACTIVE: 'Ativo',
@@ -8,11 +17,13 @@ export const RoverStatusLabel: Record<RoverStatus, string> = {
   OFFLINE: 'Offline',
 };
 
-/** Accent color per rover status (used by the status badge). */
-export const RoverStatusColor: Record<RoverStatus, string> = {
-  ACTIVE: '#2e9e5b',
-  IDLE: '#c98a16',
-  OFFLINE: '#d1453b',
+/** Telemetry signal per rover status (drives the status LED), per scheme. */
+function roverStatusColors(c: SignalSet): Record<RoverStatus, string> {
+  return { ACTIVE: c.signalOk, IDLE: c.signalWarn, OFFLINE: c.signalDown };
+}
+export const RoverStatusColorByScheme: Record<Scheme, Record<RoverStatus, string>> = {
+  dark: roverStatusColors(Colors.dark),
+  light: roverStatusColors(Colors.light),
 };
 
 export const TaskStatusLabel: Record<TaskStatus, string> = {
@@ -45,11 +56,14 @@ export const SeverityLabel: Record<Severity, string> = {
   CRITICA: 'Crítica',
 };
 
-export const SeverityColor: Record<Severity, string> = {
-  BAIXA: '#2e9e5b',
-  MEDIA: '#c98a16',
-  ALTA: '#e0701a',
-  CRITICA: '#d1453b',
+// ALTA gets a dedicated amber→red transition step (between warn and down),
+// tuned per scheme for contrast.
+function severityColors(c: SignalSet, alta: string): Record<Severity, string> {
+  return { BAIXA: c.signalIdle, MEDIA: c.signalWarn, ALTA: alta, CRITICA: c.signalDown };
+}
+export const SeverityColorByScheme: Record<Scheme, Record<Severity, string>> = {
+  dark: severityColors(Colors.dark, '#E0701A'),
+  light: severityColors(Colors.light, '#C2410C'),
 };
 
 /** Order matters: drives the severity selector on the report form. */

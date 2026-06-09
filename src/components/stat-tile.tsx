@@ -1,9 +1,10 @@
-/** Compact metric tile for the mission overview. */
+/** readout-tile (DESIGN.md) — panel-hud chrome, tabular readout + mono label. */
 
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Elevation, PanelBevel, Radius, Spacing } from '@/constants/theme';
+import { useThemeContext } from '@/contexts/theme-context';
 import { useTheme } from '@/hooks/use-theme';
 
 type StatTileProps = {
@@ -13,14 +14,27 @@ type StatTileProps = {
 
 export function StatTile({ value, label }: StatTileProps) {
   const theme = useTheme();
+  const { scheme } = useThemeContext();
   return (
     <View
       style={[
         styles.tile,
-        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+        { backgroundColor: theme.panel, borderColor: theme.panelEdge, ...Elevation[scheme] },
       ]}>
-      <ThemedText style={[styles.value, { color: theme.tint }]}>{value}</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
+
+      <View pointerEvents="none" style={styles.bevel} />
+      <ThemedText type="readout" themeColor="text" numberOfLines={1} adjustsFontSizeToFit>
+        {value}
+      </ThemedText>
+      {/* Tighter tracking + shrink-to-fit so a long single word (OCORRÊNCIAS)
+          fills the narrow column instead of breaking across lines. */}
+      <ThemedText
+        type="eyebrow"
+        themeColor="inkMute"
+        numberOfLines={2}
+        adjustsFontSizeToFit
+        minimumFontScale={0.85}
+        style={styles.label}>
         {label}
       </ThemedText>
     </View>
@@ -31,17 +45,23 @@ const styles = StyleSheet.create({
   tile: {
     flex: 1,
     minWidth: 90,
-    borderRadius: Spacing.three,
-    borderWidth: StyleSheet.hairlineWidth,
-    padding: Spacing.three,
-    gap: Spacing.one,
-  },
-  value: {
-    fontSize: 28,
-    fontWeight: '700',
-    lineHeight: 32,
+    borderRadius: Radius.md,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.two,
+    gap: Spacing.two,
+    overflow: 'hidden',
   },
   label: {
-    lineHeight: 16,
+    letterSpacing: 0.6,
+  },
+  bevel: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: PanelBevel,
   },
 });

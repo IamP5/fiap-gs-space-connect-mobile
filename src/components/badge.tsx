@@ -1,4 +1,4 @@
-/** Small colored pill used for rover/task status and severity. */
+/** status-led (DESIGN.md) — an 8px signal dot + a mono-caps label, no fill. */
 
 import { StyleSheet, View } from 'react-native';
 
@@ -7,14 +7,15 @@ import { Spacing } from '@/constants/theme';
 
 type BadgeProps = {
   label: string;
-  /** Accent color; rendered as a tinted background + colored text. */
+  /** Signal color for rover/task status or severity. */
   color: string;
 };
 
 export function Badge({ label, color }: BadgeProps) {
   return (
-    <View style={[styles.badge, { backgroundColor: `${color}22`, borderColor: color }]}>
-      <ThemedText type="smallBold" style={[styles.text, { color }]}>
+    <View style={styles.badge}>
+      <View style={[styles.dot, { backgroundColor: color }]} />
+      <ThemedText type="eyebrow" style={{ color }}>
         {label}
       </ThemedText>
     </View>
@@ -23,14 +24,13 @@ export function Badge({ label, color }: BadgeProps) {
 
 const styles = StyleSheet.create({
   badge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.half,
-    borderRadius: Spacing.two,
-    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
   },
-  text: {
-    fontSize: 12,
-    lineHeight: 18,
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 });

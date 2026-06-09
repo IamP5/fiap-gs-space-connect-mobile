@@ -1,9 +1,10 @@
-/** Labeled multiline-capable text input with inline validation error. */
+/** text-input (DESIGN.md) — soft fill, cyan focus border, inline error. */
 
+import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Glow, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type FieldProps = {
@@ -25,28 +26,37 @@ export function Field({
   error,
 }: FieldProps) {
   const theme = useTheme();
+  const [focused, setFocused] = useState(false);
+
+  // border: error (red) > focus (cyan + glow) > resting (panel edge).
+  const borderColor = error ? theme.signalDown : focused ? theme.accent : theme.panelEdge;
 
   return (
     <View style={styles.container}>
-      <ThemedText type="smallBold">{label}</ThemedText>
+      <ThemedText type="eyebrow" themeColor="inkMute">
+        {label}
+      </ThemedText>
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={theme.textSecondary}
+        placeholderTextColor={theme.inkMute}
         multiline={multiline}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         style={[
           styles.input,
           multiline && styles.multiline,
           {
             color: theme.text,
-            backgroundColor: theme.backgroundElement,
-            borderColor: error ? '#d1453b' : theme.border,
+            backgroundColor: theme.canvasSoft,
+            borderColor,
           },
+          focused && !error ? Glow.armed : null,
         ]}
       />
       {error ? (
-        <ThemedText type="small" style={styles.error}>
+        <ThemedText selectable type="small" style={{ color: theme.signalDown }}>
           {error}
         </ThemedText>
       ) : null}
@@ -56,21 +66,19 @@ export function Field({
 
 const styles = StyleSheet.create({
   container: {
-    gap: Spacing.one,
+    gap: Spacing.two,
   },
   input: {
     minHeight: 50,
-    borderRadius: Spacing.two,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: Radius.sm,
+    borderCurve: 'continuous',
+    borderWidth: 1,
     paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    fontSize: 16,
+    paddingVertical: 12,
+    fontSize: 15,
   },
   multiline: {
     minHeight: 110,
     textAlignVertical: 'top',
-  },
-  error: {
-    color: '#d1453b',
   },
 });

@@ -7,22 +7,29 @@ import { Card } from '@/components/card';
 import { MessageState } from '@/components/message-state';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
-import {
-  RoverStatusColor,
-  RoverStatusLabel,
-  TaskStatusLabel,
-} from '@/constants/domain';
+import { RoverStatusLabel, TaskStatusLabel } from '@/constants/domain';
 import { Spacing } from '@/constants/theme';
+import { useDomainColors } from '@/hooks/use-domain-colors';
 import { getRoverById, getTaskForRover } from '@/services/worksite';
 
 /** A label/value row inside a detail card. */
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
   return (
     <View style={styles.row}>
-      <ThemedText type="small" themeColor="textSecondary">
+      <ThemedText type="eyebrow" themeColor="textSecondary">
         {label}
       </ThemedText>
-      <ThemedText type="smallBold">{value}</ThemedText>
+      <ThemedText selectable type={mono ? 'data' : 'smallBold'}>
+        {value}
+      </ThemedText>
     </View>
   );
 }
@@ -30,6 +37,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 export default function RoverDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { roverStatus } = useDomainColors();
   const rover = getRoverById(id);
 
   // Registro não encontrado — guard against an unknown rover id.
@@ -51,17 +59,17 @@ export default function RoverDetailScreen() {
     <Screen>
       <View style={styles.titleRow}>
         <ThemedText type="subtitle">{rover.name}</ThemedText>
-        <Badge label={RoverStatusLabel[rover.status]} color={RoverStatusColor[rover.status]} />
+        <Badge label={RoverStatusLabel[rover.status]} color={roverStatus[rover.status]} />
       </View>
 
       <Card>
-        <DetailRow label="Identificador" value={rover.id} />
+        <DetailRow label="Identificador" value={rover.id} mono />
         <DetailRow label="Perfil de capacidade" value={rover.capability} />
-        <DetailRow label="Bateria" value={`${rover.battery}%`} />
+        <DetailRow label="Bateria" value={`${rover.battery}%`} mono />
       </Card>
 
-      <Card>
-        <ThemedText type="smallBold">Tarefa atual</ThemedText>
+      <Card variant={task?.status === 'LEASED' ? 'armed' : 'default'}>
+        <ThemedText type="eyebrow" themeColor="textSecondary">Tarefa atual</ThemedText>
         {task ? (
           <>
             <ThemedText type="small">{task.label}</ThemedText>

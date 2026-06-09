@@ -90,7 +90,7 @@ export default function ReportScreen() {
 
   return (
     <Screen>
-      <ThemedText type="small" themeColor="textSecondary">
+      <ThemedText type="small" themeColor="inkMute">
         Registre uma ocorrência observada na telemetria. Campos obrigatórios são validados
         antes do envio.
       </ThemedText>
@@ -131,7 +131,7 @@ export default function ReportScreen() {
         error={errors.description}
       />
 
-      <ThemedText type="small" themeColor="textSecondary">
+      <ThemedText type="small" themeColor="inkMute">
         Ao registrar, o coordenador responde com a ação de auto-recuperação do canteiro —
         você recebe um alerta no dispositivo.
       </ThemedText>

@@ -1,10 +1,13 @@
-/** Themed pressable button with primary / secondary variants. */
+/** Pill CTA (DESIGN.md) — primary = solid cyan, secondary = white ghost. */
 
-import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
+import Animated from 'react-native-reanimated';
 
-import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Glow, Radius, Spacing } from '@/constants/theme';
+import { usePressScale } from '@/hooks/use-press-scale';
 import { useTheme } from '@/hooks/use-theme';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type ButtonProps = {
   label: string;
@@ -24,43 +27,48 @@ export function Button({
   const theme = useTheme();
   const isPrimary = variant === 'primary';
   const isDisabled = disabled || loading;
+  const { animatedStyle, onPressIn, onPressOut } = usePressScale(0.97);
+
+  // primary = solid cyan fill with cyan glow; secondary = white-outlined ghost.
+  const labelColor = isPrimary ? theme.onAccent : theme.text;
 
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="button"
       disabled={isDisabled}
       onPress={onPress}
-      style={({ pressed }) => [
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      style={[
         styles.base,
-        {
-          backgroundColor: isPrimary ? theme.tint : theme.backgroundElement,
-          borderColor: theme.border,
-          borderWidth: isPrimary ? 0 : StyleSheet.hairlineWidth,
-          opacity: isDisabled ? 0.5 : pressed ? 0.85 : 1,
-        },
+        isPrimary
+          ? { backgroundColor: theme.accent, ...Glow.accent }
+          : { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.text },
+        { opacity: isDisabled ? 0.4 : 1 },
+        animatedStyle,
       ]}>
       {loading ? (
-        <ActivityIndicator color={isPrimary ? '#ffffff' : theme.text} />
+        <ActivityIndicator color={labelColor} />
       ) : (
-        <ThemedText
-          type="smallBold"
-          style={[styles.label, { color: isPrimary ? '#ffffff' : theme.text }]}>
-          {label}
-        </ThemedText>
+        <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 50,
-    borderRadius: Spacing.three,
+    minHeight: 52,
+    borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.four,
   },
   label: {
-    fontSize: 16,
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
 });

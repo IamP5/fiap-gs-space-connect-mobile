@@ -2,11 +2,24 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useRouter } from 'expo-r
 import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
-import { useColorScheme } from 'react-native';
+
+import { ThemeToggle } from '@/components/theme-toggle';
+import { AppThemeProvider, useThemeContext } from '@/contexts/theme-context';
+import { useTheme } from '@/hooks/use-theme';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  return (
+    <AppThemeProvider>
+      <LayoutNav />
+    </AppThemeProvider>
+  );
+}
+
+function LayoutNav() {
   const router = useRouter();
+  const theme = useTheme();
+  const { scheme } = useThemeContext();
+
   // The last response is replayed on cold start (app opened from a notification).
   const lastResponse = Notifications.useLastNotificationResponse();
   const handledId = useRef<string | null>(null);
@@ -23,16 +36,28 @@ export default function RootLayout() {
   }, [lastResponse, router]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="index" options={{ title: 'SwarmBuild' }} />
-        <Stack.Screen name="rovers/index" options={{ title: 'Rovers' }} />
-        <Stack.Screen name="rovers/[id]" options={{ title: 'Detalhe do rover' }} />
-        <Stack.Screen name="report" options={{ title: 'Reportar ocorrência' }} />
-        <Stack.Screen name="confirmation" options={{ title: 'Status da ocorrência' }} />
-        <Stack.Screen name="history" options={{ title: 'Histórico' }} />
+    <ThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack
+        screenOptions={{
+          animation: 'fade',
+          headerStyle: { backgroundColor: theme.background },
+          headerTintColor: theme.text,
+          headerTitleStyle: {
+            fontWeight: '800',
+            fontSize: 16,
+          },
+          headerShadowVisible: false,
+          contentStyle: { backgroundColor: theme.background },
+          headerRight: () => <ThemeToggle />,
+        }}>
+        <Stack.Screen name="index" options={{ title: 'SWARMBUILD' }} />
+        <Stack.Screen name="rovers/index" options={{ title: 'ROVERS' }} />
+        <Stack.Screen name="rovers/[id]" options={{ title: 'DETALHE DO ROVER' }} />
+        <Stack.Screen name="report" options={{ title: 'REPORTAR OCORRÊNCIA' }} />
+        <Stack.Screen name="confirmation" options={{ title: 'STATUS DA OCORRÊNCIA' }} />
+        <Stack.Screen name="history" options={{ title: 'HISTÓRICO' }} />
       </Stack>
-      <StatusBar style="auto" />
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
     </ThemeProvider>
   );
 }

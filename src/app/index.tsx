@@ -2,12 +2,14 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { AuroraHero } from '@/components/aurora-hero';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Screen } from '@/components/screen';
 import { StatTile } from '@/components/stat-tile';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import {
   getNotificationPermission,
   requestNotificationPermission,
@@ -19,6 +21,7 @@ import { getDomeProgress, getRovers, getSimulatedSwarmEvent } from '@/services/w
 
 export default function HomeScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const [reportCount, setReportCount] = useState(0);
   const [permission, setPermission] = useState<PermissionStatus>('undetermined');
   const [monitorMessage, setMonitorMessage] = useState<string | null>(null);
@@ -70,13 +73,11 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <View style={styles.hero}>
-        <ThemedText type="subtitle">Central de Operações</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          Companheiro Terra do enxame que constrói a cúpula lunar. Acompanhe os rovers e
-          reporte ocorrências — o canteiro se reorganiza sozinho quando um rover falha.
-        </ThemedText>
-      </View>
+      <AuroraHero
+        eyebrow="SwarmBuild · Operações Terra"
+        title="Central de Operações"
+        lead="Companheiro Terra do enxame que constrói a cúpula lunar. Acompanhe os rovers e reporte ocorrências — o canteiro se reorganiza sozinho quando um rover falha."
+      />
 
       <View style={styles.stats}>
         <StatTile value={`${domeProgress}%`} label="Cúpula concluída" />
@@ -85,7 +86,7 @@ export default function HomeScreen() {
       </View>
 
       <Card>
-        <ThemedText type="smallBold">Monitor do enxame</ThemedText>
+        <ThemedText type="eyebrow" themeColor="textSecondary">Monitor do enxame</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {permission === 'granted'
             ? 'Alertas ativos — o coordenador avisa quando um rover falha e o canteiro se auto-recupera.'
@@ -94,7 +95,7 @@ export default function HomeScreen() {
         {monitorMessage ? (
           <ThemedText
             type="small"
-            style={permission === 'granted' ? styles.monitorOk : styles.monitorWarn}
+            style={{ color: permission === 'granted' ? theme.signalOk : theme.signalWarn }}
           >
             {monitorMessage}
           </ThemedText>
@@ -113,7 +114,7 @@ export default function HomeScreen() {
       </Card>
 
       <Card>
-        <ThemedText type="smallBold">Fluxo de operação</ThemedText>
+        <ThemedText type="eyebrow" themeColor="textSecondary">Fluxo de operação</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           1. Consulte os rovers · 2. Reporte uma ocorrência · 3. Acompanhe a resposta do
           coordenador · 4. Revise o histórico.
@@ -138,9 +139,6 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  hero: {
-    gap: Spacing.two,
-  },
   stats: {
     flexDirection: 'row',
     gap: Spacing.two,
@@ -150,11 +148,5 @@ const styles = StyleSheet.create({
   },
   monitorActions: {
     marginTop: Spacing.one,
-  },
-  monitorOk: {
-    color: '#2e9e5b',
-  },
-  monitorWarn: {
-    color: '#c98a16',
   },
 });

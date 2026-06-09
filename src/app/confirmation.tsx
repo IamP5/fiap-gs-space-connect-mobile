@@ -7,13 +7,11 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { MessageState } from '@/components/message-state';
 import { Screen } from '@/components/screen';
+import { SelfHealPulse } from '@/components/self-heal-pulse';
 import { ThemedText } from '@/components/themed-text';
-import {
-  IncidentTypeLabel,
-  SeverityColor,
-  SeverityLabel,
-} from '@/constants/domain';
+import { IncidentTypeLabel, SeverityLabel } from '@/constants/domain';
 import { Spacing } from '@/constants/theme';
+import { useDomainColors } from '@/hooks/use-domain-colors';
 import { getReportById } from '@/services/reports';
 import { getSelfHealResponse } from '@/services/worksite';
 import type { IncidentReport } from '@/types/domain';
@@ -24,14 +22,21 @@ type LoadState =
   | { phase: 'missing' }
   | { phase: 'ready'; report: IncidentReport };
 
+// Hoisted: building an Intl formatter parses locale data, so create it once at
+// module scope instead of per render (js-hoist-intl).
+const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
+  dateStyle: 'short',
+  timeStyle: 'short',
+});
+
 function formatDate(iso: string): string {
-  const date = new Date(iso);
-  return date.toLocaleString('pt-BR');
+  return dateTimeFormatter.format(new Date(iso));
 }
 
 export default function ConfirmationScreen() {
   const router = useRouter();
   const { reportId } = useLocalSearchParams<{ reportId: string }>();
+  const { severity } = useDomainColors();
   const [state, setState] = useState<LoadState>({ phase: 'loading' });
 
   useFocusEffect(
@@ -86,24 +91,29 @@ export default function ConfirmationScreen() {
 
   return (
     <Screen>
-      <Card style={styles.banner}>
-        <ThemedText type="smallBold" style={styles.bannerTitle}>
-          ✓ Ocorrência registrada
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {getSelfHealResponse(report.roverId).detail}
-        </ThemedText>
-      </Card>
+      <View style={styles.bannerWrap}>
+        <Card variant="armed">
+          <ThemedText type="eyebrow" themeColor="accent" style={styles.bannerTitle}>
+            ✓ Ocorrência registrada
+          </ThemedText>
+          <ThemedText selectable type="lead" themeColor="inkSoft">
+            {getSelfHealResponse(report.roverId).detail}
+          </ThemedText>
+        </Card>
+        <SelfHealPulse />
+      </View>
 
       <View style={styles.titleRow}>
         <ThemedText type="subtitle">{report.roverName}</ThemedText>
-        <Badge label={SeverityLabel[report.severity]} color={SeverityColor[report.severity]} />
+        <Badge label={SeverityLabel[report.severity]} color={severity[report.severity]} />
       </View>
 
       <Card>
-        <ThemedText type="smallBold">{IncidentTypeLabel[report.type]}</ThemedText>
-        <ThemedText type="small">{report.description}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="eyebrow" themeColor="inkMute">
+          {IncidentTypeLabel[report.type]}
+        </ThemedText>
+        <ThemedText selectable type="small">{report.description}</ThemedText>
+        <ThemedText type="data" themeColor="inkMute">
           Registrada em {formatDate(report.createdAt)}
         </ThemedText>
       </Card>
@@ -121,11 +131,10 @@ export default function ConfirmationScreen() {
 }
 
 const styles = StyleSheet.create({
-  banner: {
-    borderColor: '#2e9e5b',
+  bannerWrap: {
+    position: 'relative',
   },
   bannerTitle: {
-    color: '#2e9e5b',
     fontSize: 16,
   },
   titleRow: {
