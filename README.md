@@ -1,5 +1,14 @@
 # SwarmBuild Ops — Companheiro Mobile (Global Solution)
 
+## Integrantes
+
+| Nome              | RM     |
+| ----------------- | ------ |
+| Bruno Dominicheli | 554981 |
+| Gabriel Gouvea    | 555528 |
+| Miguel Kapicius   | 556198 |
+| Thiago Ferreira   | 555608 |
+
 Aplicativo mobile em **React Native + Expo** para o tema da Global Solution
 **SwarmBuild**: um enxame de rovers autônomos constrói uma cúpula de habitat lunar e o
 canteiro **se auto-recupera** quando um rover falha — o lease da tarefa expira e ela é
