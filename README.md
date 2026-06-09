@@ -135,7 +135,6 @@ npx expo export --platform ios    # bundle de produção (valida todas as telas)
 
 ## Evidências de execução
 
-Veja o **vídeo curto** demonstrando o fluxo completo (início → rovers → detalhe →
-reportar → alerta do coordenador → confirmação → histórico) e capturas de tela na entrega.
-
-> _Inclua aqui o link do vídeo e/ou as imagens das telas._
+Veja o **vídeo de demonstração** — [`gs-mobile-demo.mov`](./gs-mobile-demo.mov) — com o
+fluxo completo: início → rovers → detalhe → reportar ocorrência → alerta do coordenador
+(notificação local) → confirmação (self-heal) → histórico.
